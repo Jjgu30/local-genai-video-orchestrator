@@ -1,67 +1,58 @@
-🎬 Automated GenAI Video Orchestration Pipeline (v13)
+# 🎬 Automated GenAI Video Orchestration Pipeline (v13)
 
-A low-code/code-hybrid architecture for end-to-end video production, utilizing n8n, ComfyUI, and FFmpeg.
+**A low-code/code-hybrid architecture for end-to-end video production, utilizing n8n, ComfyUI, and FFmpeg.**
 
-📋 Project Overview
+![n8n](https://img.shields.io/badge/Orchestration-n8n-FF655A) ![ComfyUI](https://img.shields.io/badge/Generative-ComfyUI-blue) ![NVIDIA](https://img.shields.io/badge/Hardware-RTX%204090-76B900) ![FFmpeg](https://img.shields.io/badge/Render-FFmpeg-green)
 
-This repository contains the orchestration logic for a fully automated financial commentary video pipeline. It transforms raw text/ideas into 1440p (2K) narrative videos without human intervention in the loop.
+## 📋 Project Overview
+This repository contains the orchestration logic for a **fully automated financial commentary video pipeline**. It transforms raw text/ideas into 1440p (2K) narrative videos without human intervention in the loop.
 
-The Product Goal: Reduce video production cycle time from 40 hours (manual) to <4 hours (automated) while eliminating SaaS subscription dependencies by utilizing local hardware.
+**The Product Goal:** Reduce video production cycle time from **40 hours** (manual) to **<4 hours** (automated) while eliminating SaaS subscription dependencies by utilizing local hardware.
 
-🏗️ Architecture & Logic
+## 🏗️ Architecture & Logic
 
-The pipeline is managed by n8n (workflow provided in YT-Finance-Workflow-V13.json) which acts as the control plane, orchestrating distinct microservices:
+The pipeline is managed by **n8n** (the control plane), which orchestrates distinct microservices for Image, Video, and Audio generation.
 
-1. Ingestion & Narrative Construction
+### 1. Orchestration (The Brain)
+* **File:** `YT-Finance Workflow V13 - FFMPEG & 1440P(1).json`
+* **Function:** This is the master controller.
+    * **Ingestion:** Grabs raw transcripts via Supadata/YouTube.
+    * **Logic:** Uses DeepSeek-V3 to rewrite scripts and a custom JavaScript algorithm to segment the script into semantic scenes (5-10s duration).
+    * **Assembly:** Triggers FFmpeg commands to stitch the final assets.
 
-    Transcript Extraction: Ingests raw YouTube URLs via Supadata.
+### 2. Visual Generation (The Engine)
+* **File:** `02-Z Image Turbo txt2img bf16 1920x1080px FullHD_V3(1).json`
+    * **Function:** High-speed Text-to-Image generation. Uses **Z-IMAGE/Turbo** models with **SageAttention** to generate the initial "Impasto Oil Painting" style frames at 1080p/2K.
+* **File:** `Wan_Video_21_InfiniteTalk.json`
+    * **Function:** Image-to-Video conversion using **Wan 2.1**. It takes the static frames and animates them based on the script's emotional tone.
 
-    LLM Processing (DeepSeek-V3):
+### 3. Audio Synthesis (The Voice)
+* **File:** `TTS - Single-Speaker.json`
+    * **Function:** Dedicated text-to-speech workflow utilizing **InfiniteTalk**. It generates character-specific voiceovers and aligns them with the SRT timestamps.
 
-        Sanitization: Cleans raw transcripts (removes "fluff", preserves financial data).
+## 🛠️ Tech Stack & Optimization
 
-        Scripting: Re-writes content into a specific "Financial Realist" persona.
+* **Orchestrator:** n8n (Self-Hosted, Docker)
+* **Generative Backends:** ComfyUI (Local API)
+* **Hardware:** NVIDIA RTX 4090 (24GB VRAM)
+    * *Optimization:* Implemented **Triton kernels** and **SageAttention** to reduce latency by ~35%.
+    * *Quantization:* GGUF/EXL2 strategies used to fit 14B+ parameter models alongside video rendering buffers.
+* **Post-Production:** FFmpeg (Dynamic Zoom/Pan filters: `crop=w=2560:h=1440...`)
 
-        Title/Metadata: Generates high-CTR titles and SEO tags via structured output parsers.
+## 📂 Repository File Manifest
 
-2. Semantic Scene Segmentation (Custom JS)
+```text
+├── YT-Finance Workflow V13 - FFMPEG & 1440P(1).json   # MAIN: n8n Orchestrator Logic
+├── 02-Z Image Turbo txt2img...json                    # ComfyUI: Text-to-Image Generator
+├── Wan_Video_21_InfiniteTalk.json                     # ComfyUI: Video & Lip-Sync Generator
+├── TTS - Single-Speaker.json                          # ComfyUI: Audio/Speech Synthesis
+├── LICENSE                                            # MIT License
+└── README.md                                          # Documentation
 
-Unlike standard fixed-time splitting, this workflow utilizes a custom JavaScript Algorithm (visible in Code in JavaScript node) to parse script density:
+#📺 Demo / Final Output
 
-    Dynamic Pacing: Calculates scene duration based on sentence structure and semantic breaks.
+See the pipeline in action. This video was generated entirely using the logic in this repository (Script by DeepSeek, Visuals by Wan 2.1/ComfyUI, Voice by InfiniteTalk).
 
-    SRT Mapping: Aligns audio timestamps with visual scene changes to ensure "cuts" happen on beat.
+[![Watch the Videos](https://www.youtube.com/@Financial_History_and_Markets)
 
-3. Visual Generation (ComfyUI + NVIDIA Optimization)
-
-The workflow dispatches prompt payloads to a local ComfyUI instance:
-
-    Model: Custom diffusion workflow utilizing Wan 2.1 / Flux with LoRA adapters for style transfer ("Impasto Oil Painting").
-
-    Optimization: Implements SageAttention and Triton kernels to maximize inference speed on consumer hardware (RTX 4090).
-
-    VRAM Management: Utilizes aggressive quantization and latent caching to render 2K resolution images.
-
-4. Post-Production (FFmpeg Automation)
-
-The pipeline executes raw shell commands via Docker to handle video assembly:
-
-    Dynamic Ken Burns Effect: Uses mathematical expressions in FFmpeg filters (120+(240*(1-t/Duration))) to create random pan/zoom movement      on static images.
-
-    Rendering: Encodes final output to 1440p (2560x1440) at 25fps using libx264.
-
-🛠️ Tech Stack & Nodes
-
-    Orchestrator: n8n (Self-Hosted)
-
-    Database: Baserow (State management for scenes, prompts, and render status)
-
-    Generative Models:
-
-        Text: DeepSeek-V3 / Llama (via OpenRouter/Ollama)
-
-        Visual: ComfyUI (Local API)
-
-        Audio: OpenAI Whisper (Timestamping) + F5-TTS
-
-    Infrastructure: Docker, NVIDIA CUDA 12.x
+*Click the image above to watch on YouTube.*
