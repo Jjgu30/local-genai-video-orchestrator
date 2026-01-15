@@ -1,6 +1,7 @@
 🎬 Automated GenAI Video Orchestration Pipeline (v13)
 
 A low-code/code-hybrid architecture for end-to-end video production, utilizing n8n, ComfyUI, and FFmpeg.
+
 📋 Project Overview
 
 This repository contains the orchestration logic for a fully automated financial commentary video pipeline. It transforms raw text/ideas into 1440p (2K) narrative videos without human intervention in the loop.
