@@ -39,6 +39,14 @@ The pipeline is managed by **n8n** (the control plane), which orchestrates disti
     * *Quantization:* GGUF/EXL2 strategies used to fit 14B+ parameter models alongside video rendering buffers.
 * **Post-Production:** FFmpeg (Dynamic Zoom/Pan filters: `crop=w=2560:h=1440...`)
 
+## 📺 Demo / Final Output
+
+See the pipeline in action. This video was generated entirely using the logic in this repository (Script by DeepSeek, Visuals by Wan 2.1/ComfyUI, Voice by InfiniteTalk).
+
+[![Watch the Videos](https://www.youtube.com/@Financial_History_and_Markets)
+
+*Click the image above to watch on YouTube.*
+
 ## 📂 Repository File Manifest
 
 ```text
@@ -49,10 +57,4 @@ The pipeline is managed by **n8n** (the control plane), which orchestrates disti
 ├── LICENSE                                            # MIT License
 └── README.md                                          # Documentation
 
-#📺 Demo / Final Output
 
-See the pipeline in action. This video was generated entirely using the logic in this repository (Script by DeepSeek, Visuals by Wan 2.1/ComfyUI, Voice by InfiniteTalk).
-
-[![Watch the Videos](https://www.youtube.com/@Financial_History_and_Markets)
-
-*Click the image above to watch on YouTube.*
