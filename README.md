@@ -64,19 +64,3 @@ The pipeline executes raw shell commands via Docker to handle video assembly:
         Audio: OpenAI Whisper (Timestamping) + F5-TTS
 
     Infrastructure: Docker, NVIDIA CUDA 12.x
-
-📂 Repository Structure
-
-├── YT-Finance Workflow V13 - FFMPEG & 1440P.json  # Main orchestration logic
-├── workflows/
-│   ├── comfyui_pipeline_flux.json                 # Visual generation graph
-│   └── ffmpeg_render_service.sh                   # Rendering microservice
-└── README.md
-
-🚀 How to Run
-
-    Import: Import the .json file into a self-hosted n8n instance.
-
-    Dependencies: Ensure a local instance of ComfyUI is running with the --listen flag to accept API payloads.
-
-    Environment: Configure Baserow credentials and ensure ffmpeg is accessible within the n8n container (or accessible via host networking).
