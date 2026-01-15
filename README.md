@@ -43,7 +43,7 @@ The pipeline is managed by **n8n** (the control plane), which orchestrates disti
 
 See the pipeline in action. This video was generated entirely using the logic in this repository (Script by DeepSeek, Visuals by Wan 2.1/ComfyUI, Voice by InfiniteTalk).
 
-[![Watch the Videos](https://www.youtube.com/@Financial_History_and_Markets)
+![Watch the Videos](https://www.youtube.com/@Financial_History_and_Markets)
 
 *Click the image above to watch on YouTube.*
 
