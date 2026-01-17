@@ -50,7 +50,7 @@ https://www.youtube.com/@Financial_History_and_Markets
 ## 📂 Repository File Manifest
 
 ```text
-├── YT-Finance Workflow V13 - FFMPEG & 1440P(1).json   # MAIN: n8n Orchestrator Logic
+├── YT-Finance Workflow V14.json                       # MAIN: n8n Orchestrator Logic
 ├── 02-Z Image Turbo txt2img...json                    # ComfyUI: Text-to-Image Generator
 ├── Wan_Video_21_InfiniteTalk.json                     # ComfyUI: Video & Lip-Sync Generator
 ├── TTS - Single-Speaker.json                          # ComfyUI: Audio/Speech Synthesis
