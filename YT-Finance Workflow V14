@@ -1,0 +1,2342 @@
+{
+  "name": "YT-Finance Workflow V14",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "srtContent",
+        "options": {
+          "fileName": "captions.srt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1744,
+        960
+      ],
+      "id": "54bdd752-c582-419b-b759-5458d5e4a56d",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776290,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604671,
+                "operator": "empty"
+              },
+              {
+                "field": 6604661,
+                "operator": "not_empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        976,
+        2240
+      ],
+      "id": "3e7facee-03a2-431d-98d7-038b4d35b527",
+      "name": "Get Scenes",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1184,
+        2240
+      ],
+      "id": "c84d47a2-655e-4e98-9c24-2ce500e050d2",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        688,
+        2240
+      ],
+      "id": "d113d6e8-c654-4c84-b021-af397a28a50f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the array of URLs\nconst urls = items[0].json[\"Video Clip URL\"] || [];\n\n// Map URLs into the required structure\nconst formattedURLs = urls.map(url => ({ \"video_url\": url }));\n\n// Return the transformed data\nreturn [{\n    json: {\n        \"video_urls\": formattedURLs\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        3088
+      ],
+      "id": "e1925da9-cfa4-4b17-ac82-ea0eedbaa6b2",
+      "name": "Video URL to Array"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8080/v1/video/concatenate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"video_urls\": {{ JSON.stringify($json.video_urls) }},\n    \"id\": \"{{ $('Get Videos').item.json.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1904,
+        3088
+      ],
+      "id": "b11ae53d-d85e-41b3-865f-88c59aa9f555",
+      "name": "Combine Clips",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "N0ydyTolezLzEPor",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776186,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604680,
+                "operator": "empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        960,
+        3088
+      ],
+      "id": "7d10a394-63ff-4aff-8cd4-00f2b32f907c",
+      "name": "Get Videos",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Combine Video & Audio",
+        "height": 240,
+        "width": 720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        944,
+        3360
+      ],
+      "id": "bb735ab8-38c8-4518-9f64-cc2287be6802",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## Combine clips into 1 video",
+        "height": 284,
+        "width": 1364,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        944,
+        2992
+      ],
+      "id": "60c0cc98-6dbf-49bc-836a-a17c2671205e",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8080/v1/video/caption",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"video_url\": \"{{ $json['Video + Audio URL'] }}\",\n  \"settings\": {\n    \"line_color\": \"#FFFFFF\",\n    \"word_color\": \"#FFF200\",\n    \"all_caps\": true,\n    \"max_words_per_line\": 3,\n    \"font_size\": 108,\n    \"bold\": false,\n    \"italic\": false,\n    \"underline\": false,\n    \"strikeout\": false,\n    \"outline_width\": 4,\n    \"shadow_offset\": 2,\n    \"style\": \"highlight\",\n    \"font_family\": \"The Bold Font\",\n    \"position\": \"bottom_center\"\n  },\n  \"id\": \"{{ $json.id }}\"\n}",
+        "options": {
+          "timeout": 9000000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1184,
+        3744
+      ],
+      "id": "feb7216a-652b-4884-b386-a7160057cb68",
+      "name": "Create Captions",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "N0ydyTolezLzEPor",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Add Captions",
+        "height": 240,
+        "width": 720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        944,
+        3664
+      ],
+      "id": "44970901-a226-4843-9bda-0de84e871e48",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=The Topic:\n{{ $json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# ROLE\n\nYou are a Senior Financial Commentator and Script Editor. Your persona is a \"Knowledgeable Realist\"—blending the conversational, unscripted flow of a top-tier streamer with the deep structural discipline of a macro analyst.\n\n\n# THE GOAL\n\nRewrite raw transcripts into a high-performance 70/30 Fusion Commentary Script:\n\n- 70% Structural Analysis: Focus on mechanics, incentives, debt, and the \"Broken Rules\" of finance.\n\n- 30% Urgent Catalyst: Anchor the analysis to specific dates, upcoming events, or systemic \"bombs\".\n\n\n# TONE & VOICE\n\n- Direct & Skeptical: Opinionated about logic, not people. Critique arguments with math, not emotion.\n\n- Dramatic Tension (30%): Use punchy urgency in hooks and pivots\n\n- Metaphorical Precision: Use one high-stakes imagery per script\n\n- Professional Vocabulary: Strictly avoid internet/gamer slang (no \"chat,\" \"boys,\" or \"cringe\").\n\n\n# ENGAGEMENT & LOGIC FRAMEWORK\n\n- The 10-Second Payoff: State the topic, why it matters now, and hint at what they will understand by the end.\n\n- Narrative Anchor (Required): Create one named idea per script (e.g., “The Repatriation Myth”). Repeat it 2–3 times to reinforce memory.\n\n- Cause → Effect Loops: Every major point must show: Policy → Mechanic → Consequence → Who it hits.\n\n- Pattern Interrupts: Drop short standalone truths every 60–90 seconds\n\n\n# EDITORIAL STRUCTURE (Internal Logic)\n\n1. The Hook: High-tension immediacy.\n\n2. The Surface: Briefly acknowledge the headline narrative to hook search-intent viewers.\n\n3. The Pivot: Build tension: \"Everyone's saying X. But here's the hidden crack no one's watching.\"\n\n4. The Deep Dive: The bulk of the script (70% mechanics). Weave in historical parallels (e.g., 1929, 2008).\n\n5. The Nuance: Challenge emotional reactions/apocalypse framing.\n\n6. The Takeaway: Grounded outcome.\n\n\n# WRITING RULES\n\n- Sentence Rhythm: Short, punchy sentences. Fragments allowed for emphasis.\n\n- Conciseness: If a line doesn’t add information, cut it. No flowery descriptions.\n\n- Pattern Interrupts: Use 1-2 standalone single lines per script for hard truths.\n\n- Formatting: Plain text for delivery. No bolding. No headers in the script.\n\nINPUT TRANSCRIPT: {{ $json.text }}\n\nOUTPUT INSTRUCTIONS: Produce ONLY the spoken-word script. Execute the Hook Protocol immediately."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1216,
+        384
+      ],
+      "id": "42e4a217-9467-48ae-b348-502033196ac7",
+      "name": "Script Writer 🧠"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-v3.2",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        592
+      ],
+      "id": "70a1f6e9-e67e-4c5f-b9af-258112319563",
+      "name": "OpenRouter - Deepseek",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WwFsBIGbdM1v2Glq",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"title\": {\n      \"type\": \"string\",\n      \"description\": \"A high-CTR title under 60 chars. Must highlight a paradox, a broken mechanism, or a hidden cost. No 'How to'.\"\n    },\n    \"description_hook\": {\n      \"type\": \"string\",\n      \"description\": \"The first 2-3 sentences of the description. Structure: State the conventional wisdom, then immediately contradict it with the 'scary truth'.\"\n    },\n    \"hashtags\": {\n      \"type\": \"string\",\n      \"description\": \"5-7 relevant hashtags separated by spaces. Example: #Economy #Gold #Recession\"\n    }\n  },\n  \"required\": [\n    \"title\",\n    \"description_hook\",\n    \"hashtags\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1632,
+        592
+      ],
+      "id": "e1a89028-0873-4b6c-8d36-5681cb1e6c58",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "databaseId": 339384,
+        "tableId": 776186,
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6602459,
+              "fieldValue": "={{ $('Script Writer 🧠').item.json.text }}"
+            },
+            {
+              "fieldId": 6602458,
+              "fieldValue": "={{ $json.output.title }}"
+            },
+            {
+              "fieldId": 6604681,
+              "fieldValue": "={{ $json.output.description_hook }} \n\n{{ $json.output.hashtags }}\n\n🔔 Subscribe to Financial History and Markets to master the cycles of history and navigate the complexity of modern markets.\n\n⚠️ Disclaimer: All content is for educational and illustrative purposes only; it does not constitute financial, investment, or legal advice. Markets carry inherent risks, and historical precedents are not guarantees of future outcomes.\n\n⚠️ AI Transparency: This video uses AI-assisted visuals and narration. All research, analysis, and scripting are done by me, the author."
+            },
+            {
+              "fieldId": 6676023,
+              "fieldValue": "={{ $('1st Pass').item.json.text }}"
+            },
+            {
+              "fieldId": 6602460,
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        384
+      ],
+      "id": "a7e767d0-3bf3-4bd9-a415-a1c7d2cf1606",
+      "name": "Upload Fields to Baserow",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here are the raw notes for the video:\n{{ $json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are a viral YouTube strategist for a 'Macro-Doom' finance channel.\nYour goal is to generate titles that trigger immediate fear or curiosity (FOMO).\n\n### THE RULE OF ABSOLUTES\n- NEVER describe a process (e.g., \"Market is slowing,\" \"Yields are rising,\" \"Pushing a domino\").\n- ALWAYS declare the RESULT (e.g., \"The Dollar Died,\" \"The Market is Fake,\" \"Japan Broke It\").\n- The event must sound like it has ALREADY happened or is INEVITABLE.\n\n### STRICT TITLE FORMULAS (USE THESE ONLY):\n1. The \"Broken\" Frame: \"[Subject] Just Broke the [Object]\"\n   (e.g., \"Japan Just Broke the Global Economy\")\n2. The \"Lie\" Frame: \"The [Subject] Lie No One Is Telling\"\n   (e.g., \"The Inflation Lie No One Is Telling\")\n3. The \"Paradox\" Frame: \"Why [Subject] is Defying Logic\"\n   (e.g., \"Why Gold is Defying Logic\")\n4. The \"Finality\" Frame: \"The End of [Subject] is Here\"\n   (e.g., \"The End of the US Dollar\")\n\n### INSTRUCTIONS:\n1. Analyze the user notes for the most dangerous mechanism.\n2. Select one of the \"Title Formulas\" above that fits best.\n3. Apply aggressive vocabulary: VAPORIZED, ENGINEERED, TRAP, DEAD, FAKE, ZERO.\n\n### OUTPUT JSON:\n{\n  \"title\": \"Under 50 chars. High impact. No metaphors.\",\n  \"description_hook\": \"Sentence 1: State what the textbook says (The Lie). Sentence 2: State the brutal reality (The Mechanism).\",\n  \"hashtags\": \"5-7 broad, high-volume tags.\"\n}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1488,
+        384
+      ],
+      "id": "8818e38c-58c2-41f6-8b31-43bac6f41fad",
+      "name": "Title Generator"
+    },
+    {
+      "parameters": {
+        "content": "## Create script & title",
+        "height": 468,
+        "width": 1148,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        288
+      ],
+      "id": "fa0be7a5-2202-4383-9e33-586b0f18e492",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Generate scenes & image prompts\n",
+        "height": 416,
+        "width": 1852,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        1264
+      ],
+      "id": "ed9d8c60-409d-48ac-a524-3696980b8da6",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Generate Captions from TTS",
+        "height": 276,
+        "width": 1448,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        864
+      ],
+      "id": "a1a56aa0-5126-449c-87f3-5f33c19a84bb",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Image Generation",
+        "height": 328,
+        "width": 1280,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        2160
+      ],
+      "id": "afdfb0db-f5f4-40e8-aedd-822f96a74ac6",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "## Create clips from images\n",
+        "height": 352,
+        "width": 1832,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        944,
+        2560
+      ],
+      "id": "96ebf1c6-12b2-4f2d-a4f7-b64d74fb30b8",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-chat-v3.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        1504
+      ],
+      "id": "ed3ecbbb-156d-4907-afa6-bfe8b62c0703",
+      "name": "OpenRouter - Deepseek3",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WwFsBIGbdM1v2Glq",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"Prompt\": \"enter prompt here\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1712,
+        1504
+      ],
+      "id": "22962137-db48-48ed-a6a1-d13f6fc215d3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "include": "specifiedFields",
+        "fieldsToInclude": "id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        1312
+      ],
+      "id": "14decfc2-7098-466c-afb0-228a99926ef0",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Input Transcript:\n{{ $json.fullText }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=ROLE: You are a Lead Research Analyst. Your job is to extract the \"Signal\" from the \"Noise\" for a senior scriptwriter.\n\nTHE TASK: Process the Input Transcript into a clean, logical briefing.\n\nOPERATIONAL RULES:\n1. STRICTLY REMOVE FLUFF: Delete all host introductions, channel plugs (\"subscribe,\" \"link below,\" \"smash the like\"), sales pitches (\"join our membership\"), and verbal filler.\n2. CONSOLIDATE LOGIC: If the speaker repeats the same point three times, state it once clearly.\n3. PRESERVE HARD DATA: Do NOT summarize numbers. Keep every specific yield percentage, debt amount ($), date, and financial metric exactly as stated.\n4. RESTRUCTURE: Organize the text into a logical flow: Context -> The Trigger -> The Mechanism -> The Implication.\n\nOUTPUT: Provide ONLY the cleaned, dense narrative text. No bullet points, no headers."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        944,
+        384
+      ],
+      "id": "738d319c-e4c9-4b9c-bee1-03b58d2d8284",
+      "name": "1st Pass"
+    },
+    {
+      "parameters": {
+        "content": "## Pull Raw Transcript & Idea",
+        "height": 420,
+        "width": 1180,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -192
+      ],
+      "id": "72dceefd-3a4e-40aa-901d-64672a16c61f",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/home/node/.n8n-files/temp_video_{{ $runIndex }}.mp4",
+        "options": {
+          "fileName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        2720
+      ],
+      "id": "53d78c3d-4786-41b2-8c3d-d17ce27cae6a",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        928,
+        -112
+      ],
+      "id": "556c51aa-db7b-4ca9-bd2d-60690f047c09",
+      "name": "Video Link",
+      "webhookId": "5d60d94e-a287-42c9-a308-4df651524cbc"
+    },
+    {
+      "parameters": {
+        "operation": "getTranscript",
+        "videoUrl": "={{ $json.chatInput }}"
+      },
+      "type": "n8n-nodes-supadata.supadata",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -112
+      ],
+      "id": "6c31e86b-8b22-451a-a851-74b382d81a14",
+      "name": "Get Transcript API",
+      "credentials": {
+        "supadataApi": {
+          "id": "4pV75SGmYCEwlIUJ",
+          "name": "Supadata account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// This looks for 'content' in the most recent node's output\nconst content = $input.item.json.content || $input.item.json.result?.content;\n\nif (!content) {\n  return { json: { fullText: \"Transcript still processing or not found.\" } };\n}\n\nreturn {\n  json: {\n    fullText: content.map(segment => segment.text).join(' ')\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        -128
+      ],
+      "id": "32c17723-c804-42e0-aa7f-64ff62ef88ed",
+      "name": "SRT file Reformat"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dbd1c561-9072-44de-b677-a07d9fc29dbd",
+              "leftValue": "={{ $json.content }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        -112
+      ],
+      "id": "e62e6868-cf66-4c9a-90e4-a72e4744ac4b",
+      "name": "If (For Longer Vids)"
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        48
+      ],
+      "id": "89c3a27e-3c9e-4452-be37-838909610420",
+      "name": "Wait 60s",
+      "webhookId": "459355f9-e813-48bb-a39d-75f9fc4c3376"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.supadata.ai/v1/transcript/{{ $json.jobId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supadataApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1600,
+        48
+      ],
+      "id": "61a4445b-45b6-440f-8d3f-0c028ab83195",
+      "name": "Get Transcript Again",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "N0ydyTolezLzEPor",
+          "name": "Header Auth account 2"
+        },
+        "supadataApi": {
+          "id": "4pV75SGmYCEwlIUJ",
+          "name": "Supadata account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776186,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604538,
+                "operator": "not_empty"
+              },
+              {
+                "field": 6604582,
+                "operator": "empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        960,
+        960
+      ],
+      "id": "1eb7e8a9-d48a-4d96-80b0-df383df6ce10",
+      "name": "Get Rows from Baserow",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json['tts audio'][0]['url'] }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1168,
+        960
+      ],
+      "id": "71e451a5-1630-41a6-853c-4f8dd4b7d63e",
+      "name": "GET TTS Audio"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "=data"
+            },
+            {
+              "name": "model",
+              "value": "whisper-1"
+            },
+            {
+              "name": "response_format",
+              "value": "verbose_json"
+            },
+            {
+              "name": "timestamp_granularities[]",
+              "value": "word"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1344,
+        960
+      ],
+      "id": "f443fa03-2c2b-4fb3-b0d5-b5811ebbbadc",
+      "name": "Transcripte TTS Audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "IwPHIdqTQqLEO1sY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.baserow.io/api/user-files/upload-file/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1952,
+        960
+      ],
+      "id": "1fdc8d41-a38e-4a2d-af6c-03705eb6d8ae",
+      "name": "Post to Baserow",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gvKd90Uzwvft8lDn",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "databaseId": 339384,
+        "tableId": 776186,
+        "rowId": "={{ $('Get Rows from Baserow').item.json.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604582,
+              "fieldValue": "={{ $('Post to Baserow').item.json.url }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        960
+      ],
+      "id": "1144fe60-56a2-4633-a2d5-b69fab2f32a2",
+      "name": "Update Rows in Baserow",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Fail Loop (Run if blank scenes are noticed in Baserow)\n",
+        "height": 352,
+        "width": 1260,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        1760
+      ],
+      "id": "3f5ac36d-4e99-4d07-816b-526495bb7134",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776186,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604582,
+                "operator": "not_empty"
+              },
+              {
+                "field": 6604674,
+                "operator": "empty"
+              },
+              {
+                "field": 6604680,
+                "operator": "empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        976,
+        1312
+      ],
+      "id": "c4245cc9-71f1-401c-920f-260c3300813c",
+      "name": "Get Rows from Baserow 2",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json['captions url'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1184,
+        1312
+      ],
+      "id": "f92b8735-6a81-4fbe-9961-9c327c77fc30",
+      "name": "Get Captions"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =========================================================\n// 1. GET PARENT ID (The Video ID)\n// =========================================================\n// We grab the ID from the node before the HTTP Request\n// Ensure the node name matches exactly what is in your canvas\nconst parentId = $('Get Rows from Baserow 2').first().json.id;\n\n// =========================================================\n// 2. HELPER FUNCTIONS\n// =========================================================\nfunction srtToSeconds(srtTime) {\n  const [h, m, s] = srtTime.replace(\",\", \".\").split(\":\");\n  return (+h * 3600) + (+m * 60) + parseFloat(s);\n}\n\n// Clean floating point artifacts (Round to 4 decimals)\nfunction cleanFloat(num) {\n  return Math.round(num * 10000) / 10000;\n}\n\n// =========================================================\n// 3. PARSE SRT\n// =========================================================\nconst rawSrt = $input.first().json.data;\nconst blocks = rawSrt.trim().split(/\\n\\s*\\n/);\n\nconst parsed = blocks\n  .map((block) => {\n    const lines = block.split(\"\\n\");\n    if (lines.length < 3) return null;\n\n    const [startStr, endStr] = lines[1].split(\" --> \");\n    return { \n      start_time: srtToSeconds(startStr),\n      end_time: srtToSeconds(endStr),\n      word: lines.slice(2).join(\" \").trim()\n    };\n  })\n  .filter(Boolean);\n\n// =========================================================\n// 4. BUILD OUTPUT\n// =========================================================\nreturn parsed.map((cur, i) => {\n  const next = parsed[i + 1];\n  \n  // Raw Calculations\n  const raw_segment_end = next ? next.start_time : cur.end_time;\n  const raw_duration = Math.max(0, raw_segment_end - cur.start_time);\n  const raw_speech = Math.max(0, cur.end_time - cur.start_time);\n  const raw_gap = next ? Math.max(0, next.start_time - cur.end_time) : 0;\n\n  return {\n    json: {\n      parent_id: parentId, // <--- CRITICAL UPDATE: Passes the Video ID forward\n      id: i + 1,\n      word: cur.word,\n      start_time: cleanFloat(cur.start_time),\n      end_time: cleanFloat(cur.end_time),\n      segment_end: cleanFloat(raw_segment_end),\n      speech_duration: cleanFloat(raw_speech),\n      gap_to_next: cleanFloat(raw_gap),\n      duration: cleanFloat(raw_duration)\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        1312
+      ],
+      "id": "b744798c-82b0-407d-9e14-2930817cd2ce",
+      "name": "Clean Up Timing"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =========================================================\n// INPUT HANDLING\n// =========================================================\nconst input = $input.first().json;\nconst words = input.words || (input.text ? input.text.words : []);\nconst segments = input.segments || [];\n\n// SAFE ID FETCH\nlet parentId = \"TEST_MODE_ID\"; \ntry {\n    const parentNode = $('Get Rows from Baserow') || $('Get Rows from Baserow 2'); \n    if (parentNode && parentNode.first()) {\n        parentId = parentNode.first().json.id;\n    }\n} catch (e) {}\n\n// =========================================================\n// CONFIGURATION: SEMANTIC VISUAL PACING\n// =========================================================\nconst MIN_SCENE = 2.0;       \nconst SOFT_CAP = 4.5;        \nconst HARD_CAP = 8.5;        \nconst SILENCE_THRESH = 0.12; \n\n// BAD ENDINGS: Never cut on these words\nconst BAD_ENDINGS = new Set(['the', 'a', 'an', 'and', 'or', 'of', 'in', 'to', 'is', 'at', 'with', 'for']);\n\n// =========================================================\n// PASS 1: ATOMIZER\n// =========================================================\nconst segmentEndTimes = new Set(segments.map(s => Math.round(s.end * 100)));\nfunction isSegmentEnd(seconds) { return segmentEndTimes.has(Math.round(seconds * 100)); }\n\n// Helper for SRT Time format (Required for your File Saver)\nfunction toSRTTime(seconds) {\n  const date = new Date(0);\n  date.setSeconds(seconds);\n  const time = date.toISOString().substr(11, 8);\n  const ms = (seconds % 1).toFixed(3).substring(2);\n  return `${time},${ms}`;\n}\n\nlet allPhrases = [];\nlet currentPhrase = { words: [], start: null, end: null, text: \"\" };\n\nfunction flushPhrase(isHardStop = false) {\n  if (currentPhrase.words.length > 0) {\n    currentPhrase.start = currentPhrase.words[0].start;\n    currentPhrase.end = currentPhrase.words[currentPhrase.words.length - 1].end;\n    currentPhrase.duration = currentPhrase.end - currentPhrase.start;\n    currentPhrase.text = currentPhrase.words.map(w => w.word).join(\" \").trim();\n    currentPhrase.isSentenceEnd = isHardStop || isSegmentEnd(currentPhrase.end);\n    allPhrases.push(currentPhrase);\n    currentPhrase = { words: [], start: null, end: null, text: \"\" };\n  }\n}\n\nwords.forEach((w, index) => {\n  currentPhrase.words.push(w);\n  const isSentenceBreak = isSegmentEnd(w.end);\n  let isSilenceBreak = false;\n  const nextWord = words[index + 1];\n  \n  if (nextWord && (nextWord.start - w.end >= SILENCE_THRESH)) isSilenceBreak = true;\n  const currentDuration = (w.end - (currentPhrase.words[0] ? currentPhrase.words[0].start : w.start));\n\n  if (isSentenceBreak) flushPhrase(true);\n  else if (isSilenceBreak) flushPhrase(false);\n  else if (currentDuration > 4.0) flushPhrase(false);\n});\nflushPhrase();\n\n// =========================================================\n// PASS 2: COMPOSER (Semantic Aware)\n// =========================================================\nlet finalScenes = [];\nlet buffer = { phrases: [], duration: 0 };\n\nallPhrases.forEach((phrase, index) => {\n  const isLast = index === allPhrases.length - 1;\n  const newDuration = buffer.duration + phrase.duration;\n  \n  let endsWithBadWord = false;\n  if (buffer.phrases.length > 0) {\n      const lastTxt = buffer.phrases[buffer.phrases.length - 1].text;\n      const lastWord = lastTxt.split(' ').pop().toLowerCase().replace(/[^a-z]/g, '');\n      if (BAD_ENDINGS.has(lastWord)) endsWithBadWord = true;\n  }\n\n  if (buffer.phrases.length === 0) {\n    buffer.phrases.push(phrase);\n    buffer.duration = phrase.duration;\n  } \n  else {\n    if (endsWithBadWord) {\n         buffer.phrases.push(phrase);\n         buffer.duration = newDuration;\n    }\n    else if (buffer.phrases[buffer.phrases.length-1].isSentenceEnd && buffer.duration > MIN_SCENE) {\n        finalScenes.push(buffer);\n        buffer = { phrases: [phrase], duration: phrase.duration };\n    }\n    else if (buffer.duration > SOFT_CAP) {\n        finalScenes.push(buffer);\n        buffer = { phrases: [phrase], duration: phrase.duration };\n    }\n    else if (newDuration > HARD_CAP) {\n        finalScenes.push(buffer);\n        buffer = { phrases: [phrase], duration: phrase.duration };\n    }\n    else {\n        buffer.phrases.push(phrase);\n        buffer.duration = newDuration;\n    }\n  }\n  \n  if (isLast) {\n    if (buffer.duration < 2.0 && finalScenes.length > 0) {\n      const prevScene = finalScenes[finalScenes.length - 1];\n      if (prevScene.duration + buffer.duration < HARD_CAP + 2.0) {\n        prevScene.phrases.push(...buffer.phrases);\n        prevScene.duration += buffer.duration;\n        buffer = null; \n      }\n    }\n    if (buffer) finalScenes.push(buffer);\n  }\n});\n\n// =========================================================\n// OUTPUT (With SRT Content Restored)\n// =========================================================\nlet srt = '';\nconst mappedSegments = finalScenes.map((scene, i) => {\n  const start = scene.phrases[0].start;\n  const end = scene.phrases[scene.phrases.length - 1].end;\n  const text = scene.phrases.map(p => p.text).join(\" \");\n  \n  // Re-added this line to fix the error in the next node\n  srt += `${i + 1}\\n${toSRTTime(start)} --> ${toSRTTime(end)}\\n${text}\\n\\n`;\n  \n  return {\n    parent_id: parentId,\n    id: i + 1,\n    word: text,\n    start_time: Math.round(start * 100) / 100,\n    end_time: Math.round(end * 100) / 100,\n    duration: Math.round((end - start) * 100) / 100\n  };\n});\n\n// Output BOTH the SRT string (for the File node) and Segments (for the Loop)\nreturn [{ json: { srtContent: srt, Segments: mappedSegments } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        960
+      ],
+      "id": "b8b2bb92-ac67-4752-a804-40eeb411d7aa",
+      "name": "Scene Splitter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.word }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Role: You are a Satirical Financial Art Director.\nTask: Translate the \"Input Text\" below into a physical, finance-themed visual scene.\nFormat: Output ONLY the JSON object below.\n\nInput Text: {{ $json.word }}\n\nRules for Translation:\n1. **Theme:** The visual must relate to the world of macroeconomics, crypto, or finance.\n2. **Creativity:** You have total freedom to invent the visual metaphor.\n3. **Constraint:** Ensure the description is of a physical object or scene (no abstract text), suitable for a heavy texture painting.\n\nOutput Template:\n{\n  \"Prompt\": \"A thick impasto oil painting with a clear central subject dominating the frame: [INSERT YOUR FINANCIAL VISUAL TRANSLATION HERE]. Heavy palette-knife application, layered paint ridges, visible canvas grain. Loose but legible forms, uncluttered composition. Use natural, scene-appropriate lighting and mood. Color and emotion should come from the subject itself. Analog hand-painted fine art, non-digital, painterly realism.\"\n}"
+            }
+          ]
+        },
+        "batching": {
+          "batchSize": 1,
+          "delayBetweenBatches": 500
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1568,
+        1312
+      ],
+      "id": "7d42290f-ecbf-4d81-8e70-f2ce4f2726c7",
+      "name": "Scene Image Prompter",
+      "retryOnFail": false,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "databaseId": 339384,
+        "tableId": 776290,
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604660,
+              "fieldValue": "={{ $json.output.Prompt }}"
+            },
+            {
+              "fieldId": 6604661,
+              "fieldValue": "={{$('Clean Up Timing').item.json.duration}}"
+            },
+            {
+              "fieldId": 6631814,
+              "fieldValue": "={{$('Clean Up Timing').item.json.segment_end}}"
+            },
+            {
+              "fieldId": 6647664,
+              "fieldValue": "={{ $('Clean Up Timing').item.json.word }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        1312
+      ],
+      "id": "f93efb1f-722f-4e33-ba9e-5af20a1adeaa",
+      "name": "Create Row in Baserow",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "databaseId": 339384,
+        "tableId": 776186,
+        "rowId": "={{ $('Get Rows from Baserow 2').first().json.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604674,
+              "fieldValue": "={{ $json.ids }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        1312
+      ],
+      "id": "a907a6da-b384-45e4-8532-3f26e342c59c",
+      "name": "Update Rows in Baserow 2",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Initialize an array to hold IDs\nconst ids = [];\n\n// Loop over input items\nfor (const item of $input.all()) {\n  // Loop through each 'data' array\n  for (const dataItem of item.json.data) {\n    // Check if 'id' is defined\n    if (dataItem.id) {\n      // Push the ID into the array\n      ids.push(dataItem.id);\n    }\n  }\n}\n\n// Return the array wrapped in an object\nreturn [{ json: { ids } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        1312
+      ],
+      "id": "5384f638-ab9a-4562-a1d6-226132eca473",
+      "name": "Extract Scene IDs"
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776290,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6647664,
+                "operator": "not_empty"
+              },
+              {
+                "field": 6604660,
+                "operator": "empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        960,
+        1872
+      ],
+      "id": "28076ac6-2fbc-484f-9eaa-cb73326e55cc",
+      "name": "Get Rows from Baserow 3",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1168,
+        1872
+      ],
+      "id": "9bda7da6-4a89-4535-a946-2184c041f78e",
+      "name": "Loop Over Items 2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json['initial prompt'] }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Role: You are a Satirical Financial Art Director.\nTask: Translate the \"Input Text\" below into a physical, finance-themed visual scene.\nFormat: Output ONLY the JSON object below.\n\nInput Text: {{ $json['initial prompt'] }}\n\nRules for Translation:\n1. **Theme:** The visual must relate to the world of macroeconomics, crypto, or finance.\n2. **Creativity:** You have total freedom to invent the visual metaphor.\n3. **Constraint:** Ensure the description is of a physical object or scene (no abstract text), suitable for a heavy texture painting.\n\nOutput Template:\n{\n  \"Prompt\": \"A thick impasto oil painting with a clear central subject dominating the frame: [INSERT YOUR FINANCIAL VISUAL TRANSLATION HERE]. Heavy palette-knife application, layered paint ridges, visible canvas grain. Loose but legible forms, uncluttered composition. Use natural, scene-appropriate lighting and mood. Color and emotion should come from the subject itself. Analog hand-painted fine art, non-digital, painterly realism.\"\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1392,
+        1888
+      ],
+      "id": "022e8610-adbd-4461-9f58-e1e5e40ea16b",
+      "name": "Scene Image Prompter 2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "databaseId": 339384,
+        "tableId": 776290,
+        "rowId": "={{ $('Loop Over Items 2').item.json.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604660,
+              "fieldValue": "={{ $json.output.Prompt }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        1888
+      ],
+      "id": "f82580c6-7912-4032-8eba-e6e11b185200",
+      "name": "Update Rows in Baserow 3",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflow": "={\n  \"6\": {\n    \"inputs\": {\n      \"text\": \"{{ $('Get Scenes').item.json.Prompt }}\",\n      \"clip\": [\n        \"189\",\n        0\n      ]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\n      \"title\": \"CLIP Text Encode (Prompt)\"\n    }\n  },\n  \"27\": {\n    \"inputs\": {\n      \"vae_name\": \"ae.safetensors\"\n    },\n    \"class_type\": \"VAELoader\",\n    \"_meta\": {\n      \"title\": \"Load VAE\"\n    }\n  },\n  \"162\": {\n    \"inputs\": {\n      \"width\": 2560,\n      \"height\": 1920,\n      \"batch_size\": 1\n    },\n    \"class_type\": \"EmptySD3LatentImage\",\n    \"_meta\": {\n      \"title\": \"EmptySD3LatentImage (Taller for Panning)\"\n    }\n  },\n  \"163\": {\n    \"inputs\": {\n      \"seed\": \"{{ Math.floor(Math.random() * 999999999) }}\",\n      \"steps\": 5,\n      \"cfg\": 1,\n      \"sampler_name\": \"dpmpp_sde\",\n      \"scheduler\": \"beta\",\n      \"denoise\": 1,\n      \"model\": [\n        \"191\",\n        0\n      ],\n      \"positive\": [\n        \"6\",\n        0\n      ],\n      \"negative\": [\n        \"190\",\n        0\n      ],\n      \"latent_image\": [\n        \"162\",\n        0\n      ]\n    },\n    \"class_type\": \"KSampler\",\n    \"_meta\": {\n      \"title\": \"KSampler\"\n    }\n  },\n  \"164\": {\n    \"inputs\": {\n      \"samples\": [\n        \"163\",\n        0\n      ],\n      \"vae\": [\n        \"27\",\n        0\n      ]\n    },\n    \"class_type\": \"VAEDecode\",\n    \"_meta\": {\n      \"title\": \"VAE Decode\"\n    }\n  },\n  \"171\": {\n    \"inputs\": {\n      \"images\": [\n        \"164\",\n        0\n      ]\n    },\n    \"class_type\": \"PreviewImage\",\n    \"_meta\": {\n      \"title\": \"Preview Image\"\n    }\n  },\n  \"188\": {\n    \"inputs\": {\n      \"unet_name\": \"z_image_turbo_bf16.safetensors\",\n      \"weight_dtype\": \"default\"\n    },\n    \"class_type\": \"UNETLoader\",\n    \"_meta\": {\n      \"title\": \"Load Diffusion Model\"\n    }\n  },\n  \"189\": {\n    \"inputs\": {\n      \"clip_name\": \"qwen_3_4b.safetensors\",\n      \"type\": \"lumina2\",\n      \"device\": \"default\"\n    },\n    \"class_type\": \"CLIPLoader\",\n    \"_meta\": {\n      \"title\": \"Load CLIP\"\n    }\n  },\n  \"190\": {\n    \"inputs\": {\n      \"conditioning\": [\n        \"6\",\n        0\n      ]\n    },\n    \"class_type\": \"ConditioningZeroOut\",\n    \"_meta\": {\n      \"title\": \"ConditioningZeroOut\"\n    }\n  },\n  \"191\": {\n    \"inputs\": {\n      \"shift\": 3,\n      \"model\": [\n        \"197\",\n        0\n      ]\n    },\n    \"class_type\": \"ModelSamplingAuraFlow\",\n    \"_meta\": {\n      \"title\": \"ModelSamplingAuraFlow\"\n    }\n  },\n  \"194\": {\n    \"inputs\": {\n      \"sage_attention\": \"auto\",\n      \"allow_compile\": false,\n      \"model\": [\n        \"196\",\n        0\n      ]\n    },\n    \"class_type\": \"PathchSageAttentionKJ\",\n    \"_meta\": {\n      \"title\": \"Pathch Sage Attention KJ\"\n    }\n  },\n  \"196\": {\n    \"inputs\": {\n      \"width\": 2560,\n      \"height\": 1920,\n      \"model_type\": \"zimage\",\n      \"method\": \"yarn\",\n      \"yarn_alt_scaling\": 2,\n      \"enable_dype\": 0.1,\n      \"base_resolution\": 1024,\n      \"dype_start_sigma\": 1,\n      \"dype_scale\": 2,\n      \"dype_exponent\": 1,\n      \"base_shift\": 0.5,\n      \"max_shift\": 1.15,\n      \"model\": [\n        \"188\",\n        0\n      ]\n    },\n    \"class_type\": \"DyPE_FLUX\",\n    \"_meta\": {\n      \"title\": \"DyPE\"\n    }\n  },\n  \"197\": {\n    \"inputs\": {\n      \"enable_fp16_accumulation\": true,\n      \"model\": [\n        \"194\",\n        0\n      ]\n    },\n    \"class_type\": \"ModelPatchTorchSettings\",\n    \"_meta\": {\n      \"title\": \"Model Patch Torch Settings\"\n    }\n  }\n}"
+      },
+      "type": "n8n-nodes-comfyui.comfyui",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        2256
+      ],
+      "id": "489acf1e-6ed5-4b4f-a238-f56a31cae1d3",
+      "name": "ComfyUI - Image Generation",
+      "credentials": {
+        "comfyUIApi": {
+          "id": "7cIpzCySFo5dHufK",
+          "name": "ComfyUI account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.baserow.io/api/user-files/upload-file/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1616,
+        2256
+      ],
+      "id": "e72f5508-0e0d-4a05-910b-318f7ac7857c",
+      "name": "Upload Images to Baserow",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gvKd90Uzwvft8lDn",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "databaseId": 339384,
+        "tableId": 776290,
+        "rowId": "={{ $('Loop Over Items').item.json.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604671,
+              "fieldValue": "={{ $json.name }}"
+            },
+            {
+              "fieldId": 6604676,
+              "fieldValue": "Processing"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1856,
+        2256
+      ],
+      "id": "f5c6762c-88c8-4eb9-a121-010eb0802cec",
+      "name": "Update Rows in Baserow 4",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "Scenes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        2624
+      ],
+      "id": "aaf4c104-a7c2-4307-8a65-58a1bf9be848",
+      "name": "Split Out 2"
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776186,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604680,
+                "operator": "empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        976,
+        2624
+      ],
+      "id": "79522574-a577-485b-8b21-abfa3caeb6c6",
+      "name": "Get Scenes 2",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776290,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604659,
+                "value": "={{ $json.id }}"
+              },
+              {
+                "field": 6604672,
+                "operator": "empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        2624
+      ],
+      "id": "7f27b055-3c78-4a12-b5b5-b43c0dbf68e9",
+      "name": "Get Rows from Baserow 4",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1584,
+        2624
+      ],
+      "id": "5e33a8be-3ace-4853-8b35-fb099ee0a25b",
+      "name": "Loop Over Items "
+    },
+    {
+      "parameters": {
+        "command": "=mkdir -p /home/node/.n8n-files && \\\nwget -O /home/node/.n8n-files/temp_image_{{ $runIndex }}.jpg \"{{ $json.Image[0].url }}\" && \\\nffmpeg -y -loop 1 -i /home/node/.n8n-files/temp_image_{{ $runIndex }}.jpg \\\n-vf \"crop=w=2560:h=1440:x=0:y='{{ $runIndex % 2 === 0 ? \"120+(240*(1-t/\" + $json.Duration + \"))\" : \"120+(240*(t/\" + $json.Duration + \"))\" }}',setsar=1\" \\\n-c:v libx264 -crf 18 -t {{ $json.Duration }} -pix_fmt yuv420p -preset fast /home/node/.n8n-files/temp_video_{{ $runIndex }}.mp4"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        2720
+      ],
+      "id": "4153d059-d8a7-4de7-bb39-48a1f14ded64",
+      "name": "FFMPEG - Create the video"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.baserow.io/api/user-files/upload-file/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2208,
+        2720
+      ],
+      "id": "5fa5e952-3f8f-45c7-9f71-499531d9dfc9",
+      "name": "Upload Videos to Baserow",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gvKd90Uzwvft8lDn",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "databaseId": 339384,
+        "tableId": 776290,
+        "rowId": "={{ $('Loop Over Items ').item.json.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604672,
+              "fieldValue": "={{ $json.url }}"
+            },
+            {
+              "fieldId": 6604676,
+              "fieldValue": "Done"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        2720
+      ],
+      "id": "68ed649d-db45-435b-ad13-e1aa520db279",
+      "name": "Update Rows in Baserow 5",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=rm /home/node/.n8n-files/temp_image_{{ $runIndex }}.jpg /home/node/.n8n-files/temp_video_{{ $runIndex }}.mp4"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        2720
+      ],
+      "id": "67aeac0b-e47d-4093-841a-286e79a77b17",
+      "name": "Delete video clips locally"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "Scenes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        3088
+      ],
+      "id": "353913a8-4eec-4679-8151-5389b6b7f504",
+      "name": "Split Out 1"
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776290,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604659,
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        3088
+      ],
+      "id": "98415253-5176-4316-b447-dd61eeb69c06",
+      "name": "Get Scenes ",
+      "alwaysOutputData": true,
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "Video Clip URL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        3088
+      ],
+      "id": "8e86d0b0-792c-41f6-9370-a8d6b944951c",
+      "name": "Aggregate 2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "databaseId": 339384,
+        "tableId": 776186,
+        "rowId": "={{ $json.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604680,
+              "fieldValue": "={{ $json.response }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        2096,
+        3088
+      ],
+      "id": "c35c4996-81f7-4d04-847c-0d62b678ba13",
+      "name": "Update Rows in Baserow 6",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776186,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604679,
+                "operator": "empty"
+              },
+              {
+                "field": 6604680,
+                "operator": "not_empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        3424
+      ],
+      "id": "c3bf0941-d451-4023-8bb6-d3ed5b758499",
+      "name": "Get Video & Audio",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8080/v1/ffmpeg/compose",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"id\": \"audio-layering\",\n    \"inputs\": [\n        {\n            \"file_url\": \"{{ $json['Raw Video URL'] }}\"\n        },\n        {\n            \"file_url\": \"{{ $json['tts audio'][0]['url'] }}\"\n        }\n    ],\n    \"filters\": [\n        {\n            \"filter\": \"[1:a]volume=1[outa]\"\n        }\n    ],\n    \"outputs\": [\n        {\n            \"options\": [\n                {\n                    \"option\": \"-map\",\n                    \"argument\": \"0:v\"\n                },\n                {\n                    \"option\": \"-map\",\n                    \"argument\": \"[outa]\"\n                },\n                {\n                    \"option\": \"-c:v\",\n                    \"argument\": \"copy\"\n                },\n                {\n                    \"option\": \"-c:a\",\n                    \"argument\": \"aac\"\n                }\n            ]\n        }\n    ]\n}\n",
+        "options": {
+          "timeout": 50000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1232,
+        3424
+      ],
+      "id": "44ed7e5e-2698-4b53-b207-388fc3a31a77",
+      "name": "Combine Video & Audio",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "N0ydyTolezLzEPor",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "databaseId": 339384,
+        "tableId": 776186,
+        "rowId": "={{ $('Get Video & Audio').item.json.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604679,
+              "fieldValue": "={{ $json.response[0].file_url }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        3424
+      ],
+      "id": "53807f57-f044-4bfb-8aad-43a33b4a979e",
+      "name": "Update Rows in Baserow 7",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "databaseId": 339384,
+        "tableId": 776186,
+        "returnAll": true,
+        "additionalOptions": {
+          "filters": {
+            "fields": [
+              {
+                "field": 6604678,
+                "operator": "empty"
+              },
+              {
+                "field": 6604679,
+                "operator": "not_empty"
+              },
+              {
+                "field": 6604582,
+                "operator": "not_empty"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        992,
+        3744
+      ],
+      "id": "cc11fd00-5bf4-46a2-9348-8e069db9ad13",
+      "name": "Get Clips & Captions",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "databaseId": 339384,
+        "tableId": 776186,
+        "rowId": "={{ $('Get Clips & Captions').item.json.id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": 6604678,
+              "fieldValue": "={{ $json.response }}"
+            },
+            {
+              "fieldId": 6602460,
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.baserow",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        3744
+      ],
+      "id": "ae827be1-9568-485b-ac4c-01fe75f3230c",
+      "name": "Update Rows in Baserow 8",
+      "credentials": {
+        "baserowApi": {
+          "id": "5BFgA4UpsK8GRlHn",
+          "name": "Baserow account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Get Transcript API": [
+      {
+        "json": {
+          "jobId": "f5c67767-4cc5-42c1-be2a-001d7e9a7481"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Wait 60s": [
+      {
+        "json": {
+          "jobId": "f5c67767-4cc5-42c1-be2a-001d7e9a7481"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Post to Baserow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scenes": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "ComfyUI - Image Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video URL to Array": {
+      "main": [
+        [
+          {
+            "node": "Combine Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Clips": {
+      "main": [
+        [
+          {
+            "node": "Update Rows in Baserow 6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Videos": {
+      "main": [
+        [
+          {
+            "node": "Split Out 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Script Writer 🧠": {
+      "main": [
+        [
+          {
+            "node": "Title Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter - Deepseek": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Script Writer 🧠",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Title Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "1st Pass",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Title Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Title Generator": {
+      "main": [
+        [
+          {
+            "node": "Upload Fields to Baserow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter - Deepseek3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Scene Image Prompter",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Scene Image Prompter 2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Scene Image Prompter",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "Scene Image Prompter 2",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Extract Scene IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1st Pass": {
+      "main": [
+        [
+          {
+            "node": "Script Writer 🧠",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Captions": {
+      "main": [
+        [
+          {
+            "node": "Update Rows in Baserow 8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Scenes 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Upload Videos to Baserow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Link": {
+      "main": [
+        [
+          {
+            "node": "Get Transcript API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Transcript API": {
+      "main": [
+        [
+          {
+            "node": "If (For Longer Vids)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SRT file Reformat": {
+      "main": [
+        [
+          {
+            "node": "1st Pass",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If (For Longer Vids)": {
+      "main": [
+        [
+          {
+            "node": "SRT file Reformat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 60s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 60s": {
+      "main": [
+        [
+          {
+            "node": "Get Transcript Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Transcript Again": {
+      "main": [
+        [
+          {
+            "node": "SRT file Reformat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows from Baserow": {
+      "main": [
+        [
+          {
+            "node": "GET TTS Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET TTS Audio": {
+      "main": [
+        [
+          {
+            "node": "Transcripte TTS Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcripte TTS Audio": {
+      "main": [
+        [
+          {
+            "node": "Scene Splitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Baserow": {
+      "main": [
+        [
+          {
+            "node": "Update Rows in Baserow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows from Baserow 2": {
+      "main": [
+        [
+          {
+            "node": "Get Captions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Captions": {
+      "main": [
+        [
+          {
+            "node": "Clean Up Timing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Up Timing": {
+      "main": [
+        [
+          {
+            "node": "Scene Image Prompter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scene Splitter": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scene Image Prompter": {
+      "main": [
+        [
+          {
+            "node": "Create Row in Baserow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Row in Baserow": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Scene IDs": {
+      "main": [
+        [
+          {
+            "node": "Update Rows in Baserow 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows from Baserow 3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items 2": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Scene Image Prompter 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scene Image Prompter 2": {
+      "main": [
+        [
+          {
+            "node": "Update Rows in Baserow 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Rows in Baserow 3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ComfyUI - Image Generation": {
+      "main": [
+        [
+          {
+            "node": "Upload Images to Baserow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Images to Baserow": {
+      "main": [
+        [
+          {
+            "node": "Update Rows in Baserow 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Rows in Baserow 4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out 2": {
+      "main": [
+        [
+          {
+            "node": "Get Rows from Baserow 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scenes 2": {
+      "main": [
+        [
+          {
+            "node": "Split Out 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows from Baserow 4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items ": {
+      "main": [
+        [],
+        [
+          {
+            "node": "FFMPEG - Create the video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FFMPEG - Create the video": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Videos to Baserow": {
+      "main": [
+        [
+          {
+            "node": "Update Rows in Baserow 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Rows in Baserow 5": {
+      "main": [
+        [
+          {
+            "node": "Delete video clips locally",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete video clips locally": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out 1": {
+      "main": [
+        [
+          {
+            "node": "Get Scenes ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scenes ": {
+      "main": [
+        [
+          {
+            "node": "Aggregate 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate 2": {
+      "main": [
+        [
+          {
+            "node": "Video URL to Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video & Audio": {
+      "main": [
+        [
+          {
+            "node": "Combine Video & Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Video & Audio": {
+      "main": [
+        [
+          {
+            "node": "Update Rows in Baserow 7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Clips & Captions": {
+      "main": [
+        [
+          {
+            "node": "Create Captions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "1dd6fbff-4885-4227-8448-1252378ed10d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9a23dd656dc136b7a946e80b63599231fa365bcdc0c072e76464715260007374"
+  },
+  "id": "Gw1saAMaB5Z6a3J9",
+  "tags": [
+    {
+      "updatedAt": "2025-12-31T19:14:12.825Z",
+      "createdAt": "2025-12-31T19:14:12.825Z",
+      "id": "AFqzIbH4PpbqYCPB",
+      "name": "Youtube-Finance"
+    }
+  ]
+}
