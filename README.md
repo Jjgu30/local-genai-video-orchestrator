@@ -1,4 +1,4 @@
-# 🎬 Automated GenAI Video Orchestration Pipeline (v13)
+# 🎬 Automated GenAI Video Orchestration Pipeline (v14)
 
 **A low-code/code-hybrid architecture for end-to-end video production, utilizing n8n, ComfyUI, and FFmpeg.**
 
@@ -14,7 +14,7 @@ This repository contains the orchestration logic for a **fully automated financi
 The pipeline is managed by **n8n** (the control plane), which orchestrates distinct microservices for Image, Video, and Audio generation.
 
 ### 1. Orchestration (The Brain)
-* **File:** `YT-Finance Workflow V13 - FFMPEG & 1440P(1).json`
+* **File:** `YT-Finance Workflow V14.json`
 * **Function:** This is the master controller.
     * **Ingestion:** Grabs raw transcripts via Supadata/YouTube.
     * **Logic:** Uses DeepSeek-V3 to rewrite scripts and a custom JavaScript algorithm to segment the script into semantic scenes (5-10s duration).
