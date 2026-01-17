@@ -36,7 +36,7 @@ The pipeline is managed by **n8n** (the control plane), which orchestrates disti
 * **Generative Backends:** ComfyUI (Local API)
 * **Hardware:** NVIDIA RTX 4090 (24GB VRAM)
     * *Optimization:* Implemented **Triton kernels** and **SageAttention** to reduce latency by ~35%.
-    * *Quantization:* GGUF/EXL2 strategies used to fit 14B+ parameter models alongside video rendering buffers.
+    * *Quantization:* GGUF strategies used to fit 14B+ parameter models alongside video rendering buffers.
 * **Post-Production:** FFmpeg (Dynamic Zoom/Pan filters: `crop=w=2560:h=1440...`)
 
 ## 📺 Demo / Final Output
